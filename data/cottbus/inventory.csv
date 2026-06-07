@@ -1,0 +1,4 @@
+name,type,zone,lat,lon,image_path,data_path,description
+ERT-01,ERT,Cottbus,51.756,14.332,data/cottbus/ert/ERT-01.png,,Perfil ERT 480m - zona norte
+EM-01,EM,Cottbus,51.748,14.318,data/cottbus/em/EM-01.png,data/cottbus/em_values/EM-01.csv,DUALEM HL/VL - transecto oeste
+BH-01,Borehole,Cottbus,51.752,14.325,data/cottbus/boreholes/BH-01.png,,Sondeo BH-01 profundidad 80m
