@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import streamlit as st
 import folium
+from folium.plugins import PolyLineTextPath
 from streamlit_folium import st_folium
 import plotly.graph_objects as go
 from PIL import Image
@@ -104,15 +105,24 @@ def build_map(df: pd.DataFrame, show_types: set[str], basemap: str = "OpenStreet
                 [float(row["start_lat"]), float(row["start_lon"])],
                 [float(row["end_lat"]),   float(row["end_lon"])],
             ]
-            folium.PolyLine(
+            line = folium.PolyLine(
                 locations=coords,
                 color=color,
                 weight=5,
                 opacity=0.9,
                 tooltip=tooltip,
                 popup=folium.Popup(popup_html, max_width=220),
+            )
+            line.add_to(m)
+            # Direction arrow along the line
+            PolyLineTextPath(
+                line,
+                "        ➤",
+                repeat=True,
+                offset=14,
+                attributes={"fill": color, "font-size": "16", "font-weight": "bold"},
             ).add_to(m)
-            # Midpoint dot — gives a reliable click target
+            # Midpoint dot — reliable click target
             folium.CircleMarker(
                 location=[float(row["lat"]), float(row["lon"])],
                 radius=6,
