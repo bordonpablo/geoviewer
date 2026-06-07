@@ -131,6 +131,12 @@ def build_map(df: pd.DataFrame, show_types: set[str], basemap: str = "OpenStreet
 
 # ── Results panel ─────────────────────────────────────────────────────────────
 
+@st.dialog("ERT inversion image", width="large")
+def _ert_image_modal(img_path: str, title: str) -> None:
+    st.caption(title)
+    st.image(Image.open(img_path), use_container_width=True)
+
+
 def show_em_chart(csv_path: str, name: str) -> None:
     if not os.path.isfile(csv_path):
         st.warning(f"CSV not found: {csv_path}")
@@ -186,6 +192,8 @@ def show_results(df_zone: pd.DataFrame, profile_name: str) -> None:
         if img_path and os.path.isfile(img_path):
             st.markdown("#### ERT inversion image")
             st.image(Image.open(img_path), use_container_width=True)
+            if st.button("🔍 Full screen", key=f"zoom_{profile_name}"):
+                _ert_image_modal(img_path, profile_name)
         elif img_path:
             st.warning(f"ERT image not found: {img_path}")
 
