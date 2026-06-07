@@ -30,10 +30,6 @@ BASEMAPS = {
         "tiles": "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
         "attr": "Google",
     },
-    "CartoDB Light": {
-        "tiles": "CartoDB positron",
-        "attr": None,
-    },
 }
 
 # ── Data loading ──────────────────────────────────────────────────────────────
@@ -94,11 +90,7 @@ def build_map(df: pd.DataFrame, show_types: set[str], basemap: str = "OpenStreet
         fcolor = FILL_COLORS.get(row["type"], "#aaa")
         label  = TYPE_LABELS.get(row["type"], row["type"])
         tooltip = f"{row['name']} ({label})"
-        popup_html = (
-            f"<b>{row['name']}</b><br>"
-            f"Type: {label}<br>"
-            f"{row['description']}"
-        )
+        popup_html = f"<b>{row['name']}</b>"
 
         if _has_line(row):
             coords = [
@@ -121,17 +113,6 @@ def build_map(df: pd.DataFrame, show_types: set[str], basemap: str = "OpenStreet
                 repeat=True,
                 offset=14,
                 attributes={"fill": color, "font-size": "16", "font-weight": "bold"},
-            ).add_to(m)
-            # Midpoint dot — reliable click target
-            folium.CircleMarker(
-                location=[float(row["lat"]), float(row["lon"])],
-                radius=6,
-                color=color,
-                fill=True,
-                fill_color=fcolor,
-                fill_opacity=1.0,
-                tooltip=tooltip,
-                popup=folium.Popup(popup_html, max_width=220),
             ).add_to(m)
         else:
             folium.CircleMarker(
