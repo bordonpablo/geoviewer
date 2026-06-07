@@ -16,6 +16,25 @@ LINE_COLORS = {"ERT": "#2166ac", "EM": "#1a9641", "Borehole": "#d94801"}
 FILL_COLORS = {"ERT": "#6baed6", "EM": "#74c476", "Borehole": "#fd8d3c"}
 TYPE_LABELS = {"ERT": "ERT", "EM": "EM", "Borehole": "Borehole"}
 
+BASEMAPS = {
+    "OpenStreetMap": {
+        "tiles": "OpenStreetMap",
+        "attr": None,
+    },
+    "Google Satellite": {
+        "tiles": "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+        "attr": "Google",
+    },
+    "Google Hybrid": {
+        "tiles": "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+        "attr": "Google",
+    },
+    "CartoDB Light": {
+        "tiles": "CartoDB positron",
+        "attr": None,
+    },
+}
+
 # ── Data loading ──────────────────────────────────────────────────────────────
 
 def list_zones() -> list[str]:
@@ -47,13 +66,19 @@ def _has_line(row: pd.Series) -> bool:
 
 # ── Map building ──────────────────────────────────────────────────────────────
 
-def build_map(df: pd.DataFrame, show_types: set[str]) -> folium.Map:
+def build_map(df: pd.DataFrame, show_types: set[str], basemap: str = "OpenStreetMap") -> folium.Map:
     visible = df[df["type"].isin(show_types)]
     center = ([visible["lat"].mean(), visible["lon"].mean()]
               if not visible.empty else [51.752, 14.325])
     zoom = 14 if not visible.empty else 13
 
-    m = folium.Map(location=center, zoom_start=zoom, tiles="OpenStreetMap")
+    bm = BASEMAPS.get(basemap, BASEMAPS["OpenStreetMap"])
+    m = folium.Map(
+        location=center,
+        zoom_start=zoom,
+        tiles=bm["tiles"],
+        attr=bm["attr"] or "",
+    )
 
     seen: set[tuple] = set()
     for _, row in df.iterrows():
@@ -192,14 +217,14 @@ def show_results(df_zone: pd.DataFrame, profile_name: str) -> None:
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
-def render_sidebar(zones: list[str]) -> tuple[str, set[str]]:
+def render_sidebar(zones: list[str]) -> tuple[str, set[str], str]:
     st.sidebar.title("GeoViewer")
     st.sidebar.markdown("Geophysical data viewer")
     st.sidebar.divider()
 
     if not zones:
         st.sidebar.error("No zones found under 'data/'.")
-        return "", set()
+        return "", set(), "OpenStreetMap"
 
     zone = st.sidebar.selectbox("Study zone", zones)
 
@@ -214,13 +239,16 @@ def render_sidebar(zones: list[str]) -> tuple[str, set[str]]:
     if show_bh:  visible.add("Borehole")
 
     st.sidebar.divider()
+    basemap = st.sidebar.selectbox("Basemap", list(BASEMAPS.keys()))
+
+    st.sidebar.divider()
     st.sidebar.markdown(
         "**Legend**\n"
         "🔵 ERT  \n"
         "🟢 EM  \n"
         "🟠 Boreholes"
     )
-    return zone, visible
+    return zone, visible, basemap
 
 
 # ── Click detection ───────────────────────────────────────────────────────────
@@ -247,7 +275,7 @@ def find_nearest_profile(df: pd.DataFrame, lat: float, lon: float,
 
 def main() -> None:
     zones = list_zones()
-    zone, visible_types = render_sidebar(zones)
+    zone, visible_types, basemap = render_sidebar(zones)
 
     if not zone:
         st.info("Add zone folders under `data/` to get started.")
@@ -261,7 +289,7 @@ def main() -> None:
     with col_map:
         st.markdown("#### Interactive map")
         st.caption("Click a line or marker to view results.")
-        fmap = build_map(df, visible_types)
+        fmap = build_map(df, visible_types, basemap)
         map_data = st_folium(
             fmap,
             width=None,
