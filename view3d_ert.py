@@ -209,6 +209,8 @@ def main() -> None:
     for num in valid_nums:
         y0 = (num - 4) * Y_SPACING
         panel = vol_clean.slice(normal=[0, 1, 0], origin=[0, y0, 0])
+        if panel.n_points == 0:
+            continue
         actor = plotter.add_mesh(panel, show_scalar_bar=False, **mesh_kw_no_bar)
         actor.visibility = False
         fence_actors.append(actor)
