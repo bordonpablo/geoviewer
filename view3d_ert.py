@@ -41,6 +41,7 @@ CLIM  = [15.0, 2000.0]   # Ohm*m color limits (log scale)
 RES_X = 2.0              # grid resolution X (m)
 RES_Y = 2.0              # grid resolution Y (m)
 RES_Z = 1.0              # grid resolution Z (m)
+VE    = 5                # vertical exaggeration (depth axis × VE for display)
 
 # ── ERT resistivity colormap ──────────────────────────────────────────────────
 # 11 colors for 11 bands between the 12 breakpoints (matches Surfer profile images)
@@ -157,6 +158,11 @@ def main() -> None:
     vol_clean = vol.threshold(0.1, scalars="Resistivity")
     print(f"Valid cells after threshold: {vol_clean.n_cells:,}")
 
+    # Apply vertical exaggeration: scale Z by VE for display only.
+    # All render calls use vol_disp; raw data and Y coords are unchanged.
+    vol_disp = vol_clean.copy()
+    vol_disp.points[:, 2] *= VE
+
     # ── 4. Render ─────────────────────────────────────────────────────────────
     print("Opening PyVista window ...")
     plotter = pv.Plotter(window_size=(1500, 900),
@@ -188,7 +194,9 @@ def main() -> None:
     # one call per profile.
     valid_nums  = sorted(n for n in PROFILES if
                          os.path.isfile(os.path.join(XYZ_DIR, PROFILES[n])))
-    label_pts   = np.array([[x_min - 8, (n - 4) * Y_SPACING, z_max + 4]
+
+    # Profile labels: placed left of block, above the (VE-scaled) surface
+    label_pts   = np.array([[x_min - 8, (n - 4) * Y_SPACING, z_max * VE + 5]
                              for n in valid_nums], dtype=float)
     label_texts = [f"Profile {n}" for n in valid_nums]
 
@@ -204,13 +212,39 @@ def main() -> None:
         show_points=False,
     )
 
+    # ── Depth ruler (right side, real depths labeled) ────────────────────────
+    # Ticks every 2 m; positions are VE-scaled so they align with the mesh.
+    ruler_x = x_max + 8
+    ruler_y = y_max
+    tick_depths  = np.arange(0, z_min - 0.5, -2)   # [0, -2, -4, ..., z_min]
+    ruler_pts    = np.array([[ruler_x, ruler_y, d * VE] for d in tick_depths])
+    ruler_labels = [f"{int(abs(d))} m" for d in tick_depths]
+
+    plotter.add_point_labels(
+        ruler_pts, ruler_labels,
+        font_size=11,
+        bold=False,
+        text_color="black",
+        shape="none",
+        always_visible=True,
+        show_points=True,
+        point_color="black",
+        point_size=5,
+    )
+    # Vertical spine of the ruler
+    spine_pts = pv.Line(
+        [ruler_x, ruler_y, 0],
+        [ruler_x, ruler_y, z_min * VE],
+    )
+    plotter.add_mesh(spine_pts, color="black", line_width=2)
+    plotter.add_text(f"VE = {VE}×", position="lower_right",
+                     font_size=10, color="dimgray")
+
     # ── Pre-compute fence panels (one solid slice per profile Y position) ───────
-    # Hidden at startup; shown in FENCE mode.  This is the standard geophysical
-    # pseudo-3D fence diagram — much cleaner than a solid outer shell.
     fence_actors = []
     for num in valid_nums:
         y0 = (num - 4) * Y_SPACING
-        panel = vol_clean.slice(normal=[0, 1, 0], origin=[0, y0, 0])
+        panel = vol_disp.slice(normal=[0, 1, 0], origin=[0, y0, 0])
         if panel.n_points == 0:
             continue
         actor = plotter.add_mesh(panel, show_scalar_bar=False, **mesh_kw_no_bar)
@@ -218,9 +252,9 @@ def main() -> None:
         fence_actors.append(actor)
 
     # ── Transparent shell + orthogonal slices (SLICES mode) ──────────────────
-    shell_actor = plotter.add_mesh(vol_clean, opacity=0.06,
+    shell_actor = plotter.add_mesh(vol_disp, opacity=0.06,
                                    show_scalar_bar=False, **mesh_kw_no_bar)
-    plotter.add_mesh_slice_orthogonal(vol_clean, **mesh_kw)
+    plotter.add_mesh_slice_orthogonal(vol_disp, **mesh_kw)
 
     # ── Mode indicator text ───────────────────────────────────────────────────
     state = {"mode": "slices"}
@@ -285,7 +319,7 @@ def main() -> None:
     plotter.add_axes(
         xlabel="Distance (m)",
         ylabel="Profile offset (m)",
-        zlabel="Depth (m)",
+        zlabel=f"Depth ×{VE} (m)",
         line_width=2,
     )
     plotter.show_grid()
