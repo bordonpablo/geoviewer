@@ -84,6 +84,7 @@ def build_map(df: pd.DataFrame, show_types: set[str],
     )
 
     has_selection = selected_name is not None
+    labeled: set[str] = set()   # track names already given a label
 
     seen: set[tuple] = set()
     for _, row in df.iterrows():
@@ -131,6 +132,30 @@ def build_map(df: pd.DataFrame, show_types: set[str],
                 attributes={"fill": color, "font-size": "16", "font-weight": "bold",
                             "opacity": str(opacity)},
             ).add_to(m)
+
+            # Profile label — one per unique name, at the start of the line
+            if row["name"] not in labeled:
+                labeled.add(row["name"])
+                short = row["name"].replace("Profile ", "P").replace("profile ", "P")
+                if is_selected:
+                    html = (
+                        f'<div style="font-size:12px;font-weight:bold;color:white;'
+                        f'background:{color};padding:2px 5px;border-radius:4px;'
+                        f'white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.4);">'
+                        f'{short}</div>'
+                    )
+                else:
+                    lbl_opacity = "1.0" if not has_selection else "0.55"
+                    html = (
+                        f'<div style="font-size:10px;font-weight:bold;color:{color};'
+                        f'background:rgba(255,255,255,0.82);padding:1px 4px;'
+                        f'border-radius:3px;white-space:nowrap;opacity:{lbl_opacity};">'
+                        f'{short}</div>'
+                    )
+                folium.Marker(
+                    location=[float(row["start_lat"]), float(row["start_lon"])],
+                    icon=folium.DivIcon(html=html, icon_size=(50, 20), icon_anchor=(25, 10)),
+                ).add_to(m)
         else:
             folium.CircleMarker(
                 location=[float(row["lat"]), float(row["lon"])],
