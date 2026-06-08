@@ -155,22 +155,22 @@ def main() -> None:
     vol_clean = vol.threshold(0.1, scalars="Resistivity")
     print(f"Valid cells after threshold: {vol_clean.n_cells:,}")
 
-    # 4. Render
+    # ── 4. Render ─────────────────────────────────────────────────────────────
     print("Opening PyVista window ...")
     plotter = pv.Plotter(window_size=(1500, 900),
-                         title="Weisses Lauch — ERT 3D Block")
+                         title="Weisses Lauch — ERT 3D  |  T = toggle mode  |  right-click = identify profile")
     plotter.set_background("white")
 
     mesh_kw = dict(
         scalars="Resistivity",
         cmap=ERT_CMAP,
         clim=CLIM,
-        log_scale=True,          # PyVista maps log([15,2000])→[0,1]; LUT was sampled the same way
+        log_scale=True,
         scalar_bar_args=dict(
             title="Resistivity (Ohm*m)",
             title_font_size=14,
             label_font_size=11,
-            n_labels=7,           # ~15, 30, 60, 120, 250, 500, 2000
+            n_labels=7,
             vertical=True,
             position_x=0.89,
             position_y=0.15,
@@ -178,15 +178,89 @@ def main() -> None:
             height=0.65,
         ),
     )
+    mesh_kw_no_bar = {k: v for k, v in mesh_kw.items() if k != "scalar_bar_args"}
 
-    # Semi-transparent shell so you can see inside while using slices
-    plotter.add_mesh(vol_clean, opacity=0.06, show_scalar_bar=False,
-                     **{k: v for k, v in mesh_kw.items()
-                        if k != "scalar_bar_args"})
+    # ── Profile labels ────────────────────────────────────────────────────────
+    # Place labels clearly to the LEFT of the data and above the surface so
+    # they are never occluded.  One call with all points is more reliable than
+    # one call per profile.
+    valid_nums  = sorted(n for n in PROFILES if
+                         os.path.isfile(os.path.join(XYZ_DIR, PROFILES[n])))
+    label_pts   = np.array([[x_min - 8, (n - 4) * Y_SPACING, z_max + 4]
+                             for n in valid_nums], dtype=float)
+    label_texts = [f"Profile {n}" for n in valid_nums]
 
-    # Interactive orthogonal slices (drag the handles to move each plane)
+    plotter.add_point_labels(
+        label_pts, label_texts,
+        font_size=14,
+        bold=True,
+        text_color="black",
+        shape="rounded_rect",
+        shape_color="lightyellow",
+        shape_opacity=0.9,
+        always_visible=True,
+        show_points=False,
+    )
+
+    # ── Semi-transparent shell + orthogonal slices ────────────────────────────
+    shell_actor = plotter.add_mesh(vol_clean, opacity=0.06,
+                                   show_scalar_bar=False, **mesh_kw_no_bar)
     plotter.add_mesh_slice_orthogonal(vol_clean, **mesh_kw)
 
+    # ── Mode indicator text ───────────────────────────────────────────────────
+    state = {"mode": "slices"}
+    mode_actor = plotter.add_text(
+        "Mode: SLICES — drag planes to cut  |  T: switch to VOLUME",
+        position="lower_left", font_size=9, color="dimgray",
+    )
+    profile_actor = [None]   # mutable container for the right-click label
+
+    # ── Toggle T: slices (transparent shell) ↔ volume (solid shell) ──────────
+    def toggle_mode():
+        if state["mode"] == "slices":
+            shell_actor.prop.opacity = 0.75
+            state["mode"] = "volume"
+            mode_actor.SetInput(
+                "Mode: VOLUME — full 3D block visible  |  T: switch to SLICES"
+            )
+        else:
+            shell_actor.prop.opacity = 0.06
+            state["mode"] = "slices"
+            mode_actor.SetInput(
+                "Mode: SLICES — drag planes to cut  |  T: switch to VOLUME"
+            )
+        plotter.render()
+
+    plotter.add_key_event("t", toggle_mode)
+
+    # ── Right-click: identify nearest profile ─────────────────────────────────
+    # Build a Y→profile-number lookup
+    y_map = {n: (n - 4) * Y_SPACING for n in valid_nums}
+
+    def on_right_click(pos_screen):
+        # Unproject screen (x,y) to world using the hardware picker
+        picker = plotter.iren.interactor.GetPicker()
+        picker.Pick(pos_screen[0], pos_screen[1], 0, plotter.renderer)
+        world = picker.GetPickPosition()
+        if world == (0.0, 0.0, 0.0):
+            return                         # missed the mesh
+        y_world = world[1]
+        nearest = min(y_map, key=lambda k: abs(y_map[k] - y_world))
+        dist    = abs(y_map[nearest] - y_world)
+        if dist > Y_SPACING:
+            return                         # too far from any profile
+        # Update overlay
+        if profile_actor[0] is not None:
+            plotter.remove_actor(profile_actor[0])
+        profile_actor[0] = plotter.add_text(
+            f"◄  Profile {nearest}  (Y = {y_map[nearest]:.0f} m)",
+            position="upper_right", font_size=14, color="navy",
+        )
+        plotter.render()
+
+    plotter.track_click_position(on_right_click, side="right")
+
+    # ── Camera & axes ─────────────────────────────────────────────────────────
     plotter.add_axes(
         xlabel="Distance (m)",
         ylabel="Profile offset (m)",
@@ -199,10 +273,12 @@ def main() -> None:
     plotter.camera.elevation =  25
 
     print("\nControls:")
+    print("  T                  : toggle Slices / Volume mode")
+    print("  Right-click        : identify nearest profile")
     print("  Left-click + drag  : rotate")
     print("  Scroll             : zoom")
     print("  Right-click + drag : pan")
-    print("  Drag slice handles : move orthogonal cut planes")
+    print("  Drag plane handles : move cut planes (Slices mode)")
     plotter.show()
 
 
