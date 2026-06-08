@@ -13,9 +13,9 @@ st.set_page_config(page_title="GeoViewer", page_icon="🌍", layout="wide")
 
 DATA_ROOT = "data"
 
-LINE_COLORS = {"ERT": "#2166ac", "EM": "#1a9641", "Borehole": "#d94801"}
-FILL_COLORS = {"ERT": "#6baed6", "EM": "#74c476", "Borehole": "#fd8d3c"}
-TYPE_LABELS = {"ERT": "ERT", "EM": "EM", "Borehole": "Borehole"}
+LINE_COLORS = {"ERT": "#2166ac", "EM": "#1a9641"}
+FILL_COLORS = {"ERT": "#6baed6", "EM": "#74c476"}
+TYPE_LABELS = {"ERT": "ERT", "EM": "EM"}
 
 BASEMAPS = {
     "OpenStreetMap": {
@@ -219,13 +219,6 @@ def show_results(df_zone: pd.DataFrame, profile_name: str) -> None:
             st.markdown("#### EM conductivity (HL / VL)")
             show_em_chart(data_path, profile_name)
 
-    # Borehole image
-    bh_row = profile_rows[profile_rows["type"] == "Borehole"]
-    if not bh_row.empty:
-        img_path = bh_row.iloc[0]["image_path"]
-        if img_path and os.path.isfile(img_path):
-            st.markdown("#### Borehole log")
-            st.image(Image.open(img_path), use_container_width=True)
 
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
@@ -242,14 +235,12 @@ def render_sidebar(zones: list[str]) -> tuple[str, set[str], str]:
     zone = st.sidebar.selectbox("Study zone", zones)
 
     st.sidebar.markdown("#### Show on map")
-    show_ert = st.sidebar.checkbox("ERT",       value=True)
-    show_em  = st.sidebar.checkbox("EM",        value=True)
-    show_bh  = st.sidebar.checkbox("Boreholes", value=True)
+    show_ert = st.sidebar.checkbox("ERT", value=True)
+    show_em  = st.sidebar.checkbox("EM",  value=True)
 
     visible: set[str] = set()
     if show_ert: visible.add("ERT")
     if show_em:  visible.add("EM")
-    if show_bh:  visible.add("Borehole")
 
     st.sidebar.divider()
     basemap = st.sidebar.selectbox("Basemap", list(BASEMAPS.keys()))
@@ -258,8 +249,7 @@ def render_sidebar(zones: list[str]) -> tuple[str, set[str], str]:
     st.sidebar.markdown(
         "**Legend**\n"
         "🔵 ERT  \n"
-        "🟢 EM  \n"
-        "🟠 Boreholes"
+        "🟢 EM"
     )
     return zone, visible, basemap
 
