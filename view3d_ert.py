@@ -1,21 +1,26 @@
 """
-Standalone 3D ERT viewer — Weisses Lauch, profiles 4–12.
-
-Each XYZ file (Res2DInv export) is placed at a fixed Y offset so the
-profiles appear as parallel vertical cross-sections in a single PyVista scene.
+3D ERT viewer — Weisses Lauch, profiles 4-12.
 
 Run from the geoviewer root:
     .venv/Scripts/python view3d_ert.py
+
+What it does:
+  - Reads all Res2DInv XYZ exports (skip / comment lines, drop Rho <= 0)
+  - Places each profile at Y = 0, 15, 30 ... 120 m
+  - Interpolates with scipy.griddata onto a 2x2x1 m regular 3D grid
+  - Renders as a solid volume with interactive orthogonal slices
+  - Color scale: real Ohm*m, log scale, clim=[15, 2000]
 """
 
 import os
 import numpy as np
 import pandas as pd
 import pyvista as pv
+from scipy.interpolate import griddata
 
 # ── Config ────────────────────────────────────────────────────────────────────
 XYZ_DIR   = r"data\Weisses Lauch\xyz"
-Y_SPACING = 15.0   # metres between profiles along Y axis
+Y_SPACING = 15.0          # metres between profiles
 
 PROFILES = {
     4:  "profil4-865pkt-corr.xyz",
@@ -29,10 +34,14 @@ PROFILES = {
     12: "Profile 12 .xyz",
 }
 
+CLIM      = [15.0, 2000.0]   # Ohm*m color limits
+RES_X     = 2.0              # grid resolution X (m)
+RES_Y     = 2.0              # grid resolution Y (m)
+RES_Z     = 1.0              # grid resolution Z (m)
+
 # ── I/O ───────────────────────────────────────────────────────────────────────
 
 def read_xyz(path: str) -> pd.DataFrame:
-    """Read Res2DInv XYZ export; skip / comment lines; return X, Z, Rho."""
     rows = []
     with open(path, encoding="utf-8", errors="replace") as fh:
         for line in fh:
@@ -46,128 +55,119 @@ def read_xyz(path: str) -> pd.DataFrame:
                 except ValueError:
                     continue
     df = pd.DataFrame(rows, columns=["X", "Z", "Rho"])
-    # Remove physically invalid values (Res2DInv edge artefacts)
-    df = df[df["Rho"] > 0].reset_index(drop=True)
-    return df
-
-
-# ── Mesh building ─────────────────────────────────────────────────────────────
-
-def make_surface(x: np.ndarray, z: np.ndarray,
-                 log_rho: np.ndarray, y0: float) -> pv.PolyData:
-    """
-    Triangulate one ERT cross-section and place it at Y = y0.
-
-    Strategy: PyVista delaunay_2d triangulates in the XY plane.
-    We feed (X, Z, 0) so it triangulates in the X-Z plane (the profile plane),
-    then swap columns so the mesh sits at the correct 3D position (X, y0, Z).
-    """
-    # Estimate alpha: must span depth-layer gaps without bridging across voids.
-    # Use ~6× the median depth-step; generous enough for the trapezoidal mesh.
-    z_unique = np.sort(np.unique(z))
-    dz = np.median(np.abs(np.diff(z_unique))) if len(z_unique) > 1 else 1.0
-    x_unique = np.sort(np.unique(x))
-    dx = np.median(np.diff(x_unique)) if len(x_unique) > 1 else 1.0
-    alpha = max(dz, dx) * 6.0
-
-    pts_flat = np.column_stack([x, z, np.zeros(len(x))])
-    cloud = pv.PolyData(pts_flat)
-    cloud["log_rho"] = log_rho
-
-    surf = cloud.delaunay_2d(alpha=alpha)
-
-    # Remap to real 3D: old col0→X, old col1(=Z)→col2, y0→col1
-    p = surf.points.copy()
-    p[:, 2] = p[:, 1]
-    p[:, 1] = y0
-    surf.points = p
-
-    return surf
+    return df[df["Rho"] > 0].reset_index(drop=True)
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    print("Reading XYZ files …")
-    dfs: dict[int, pd.DataFrame] = {}
-    all_log_rho: list[float] = []
+
+    # 1. Load all profiles into a single point cloud (X, Y, Z, Rho)
+    print("Reading XYZ files ...")
+    px, py, pz, prho = [], [], [], []
 
     for num, fname in sorted(PROFILES.items()):
         path = os.path.join(XYZ_DIR, fname)
         if not os.path.isfile(path):
             print(f"  [skip] not found: {fname}")
             continue
-        df = read_xyz(path)
-        dfs[num] = df
-        all_log_rho.extend(np.log10(df["Rho"].values).tolist())
-        print(f"  P{num:2d}: {len(df):6d} pts  "
+        df   = read_xyz(path)
+        y0   = (num - 4) * Y_SPACING
+        px.extend(df["X"].values)
+        py.extend(np.full(len(df), y0))
+        pz.extend(df["Z"].values)
+        prho.extend(df["Rho"].values)
+        print(f"  P{num:2d}: {len(df):5d} pts  Y={y0:5.0f} m  "
               f"X=[{df.X.min():.0f}, {df.X.max():.0f}] m  "
-              f"Z=[{df.Z.min():.1f}, {df.Z.max():.1f}] m  "
-              f"Rho=[{df.Rho.min():.0f}, {df.Rho.max():.0f}] Ω·m")
+              f"Z=[{df.Z.min():.1f}, {df.Z.max():.1f}] m")
 
-    # Global colour limits (2nd–98th percentile to clip outliers)
-    clim = [float(np.percentile(all_log_rho, 2)),
-            float(np.percentile(all_log_rho, 98))]
-    print(f"\nColour range: 10^{clim[0]:.2f} – 10^{clim[1]:.2f} Ω·m  "
-          f"({10**clim[0]:.0f} – {10**clim[1]:.0f} Ω·m)\n")
+    src_pts = np.column_stack([px, py, pz])
+    src_rho = np.array(prho)
 
+    # 2. Build regular 3D grid
+    x_min, x_max = src_pts[:, 0].min(), src_pts[:, 0].max()
+    y_min, y_max = src_pts[:, 1].min(), src_pts[:, 1].max()
+    z_min, z_max = src_pts[:, 2].min(), src_pts[:, 2].max()
+
+    gx = np.arange(x_min, x_max + RES_X, RES_X)
+    gy = np.arange(y_min, y_max + RES_Y, RES_Y)
+    gz = np.arange(z_min, z_max + RES_Z, RES_Z)
+    nx, ny, nz = len(gx), len(gy), len(gz)
+
+    print(f"\nGrid: {nx} x {ny} x {nz} = {nx*ny*nz:,} points  "
+          f"(resolution {RES_X}x{RES_Y}x{RES_Z} m)")
+    print("Interpolating with scipy griddata (linear) — this may take ~30 s ...")
+
+    GX, GY, GZ = np.meshgrid(gx, gy, gz, indexing="ij")
+    dst_pts = np.column_stack([GX.ravel(), GY.ravel(), GZ.ravel()])
+
+    rho_flat = griddata(src_pts, src_rho, dst_pts,
+                        method="linear", fill_value=np.nan)
+    rho_vol  = rho_flat.reshape((nx, ny, nz))
+
+    # 3. PyVista ImageData (uniform grid)
+    # Point ordering in VTK: X varies fastest → ravel with Fortran order
+    vol = pv.ImageData()
+    vol.dimensions = (nx, ny, nz)
+    vol.origin     = (float(gx[0]), float(gy[0]), float(gz[0]))
+    vol.spacing    = (RES_X, RES_Y, RES_Z)
+
+    # Replace NaN (outside data hull) with sentinel -1; threshold will drop them
+    rho_safe = np.where(np.isnan(rho_vol), -1.0, rho_vol)
+    vol.point_data["Resistivity"] = rho_safe.ravel(order="F")
+
+    # Keep only cells with valid (positive) resistivity
+    vol_clean = vol.threshold(0.1, scalars="Resistivity")
+    print(f"Valid cells after threshold: {vol_clean.n_cells:,}")
+
+    # 4. Render
+    print("Opening PyVista window ...")
     plotter = pv.Plotter(window_size=(1500, 900),
-                         title="Weisses Lauch — ERT Pseudo-3D")
+                         title="Weisses Lauch — ERT 3D Block")
     plotter.set_background("white")
 
-    scalar_bar_added = False
-    for num, df in sorted(dfs.items()):
-        y0 = (num - 4) * Y_SPACING
-        log_rho = np.log10(df["Rho"].values)
+    mesh_kw = dict(
+        scalars="Resistivity",
+        cmap="Spectral_r",
+        clim=CLIM,
+        log_scale=True,
+        scalar_bar_args=dict(
+            title="Resistivity (Ohm*m)",
+            title_font_size=14,
+            label_font_size=11,
+            n_labels=6,
+            vertical=True,
+            position_x=0.89,
+            position_y=0.15,
+            width=0.04,
+            height=0.65,
+        ),
+    )
 
-        print(f"  Building surface P{num} …")
-        surf = make_surface(df["X"].values, df["Z"].values, log_rho, y0)
+    # Semi-transparent shell so you can see inside while using slices
+    plotter.add_mesh(vol_clean, opacity=0.06, show_scalar_bar=False,
+                     **{k: v for k, v in mesh_kw.items()
+                        if k != "scalar_bar_args"})
 
-        plotter.add_mesh(
-            surf,
-            scalars="log_rho",
-            cmap="Spectral_r",
-            clim=clim,
-            show_scalar_bar=not scalar_bar_added,
-            scalar_bar_args=dict(
-                title="Resistivity (Ω·m)",
-                title_font_size=14,
-                label_font_size=11,
-                n_labels=5,
-                fmt="%.1f",
-                vertical=True,
-                position_x=0.90,
-                position_y=0.15,
-                width=0.04,
-                height=0.65,
-            ),
-        )
-        scalar_bar_added = True
-
-        # Label at the start of each profile, slightly above terrain
-        z_top = df["Z"].max()
-        label_pt = np.array([[df["X"].min(), y0, z_top + 5]])
-        plotter.add_point_labels(
-            label_pt, [f"P{num}"],
-            font_size=12, text_color="black",
-            point_color="black", point_size=1,
-            always_visible=True,
-        )
+    # Interactive orthogonal slices (drag the handles to move each plane)
+    plotter.add_mesh_slice_orthogonal(vol_clean, **mesh_kw)
 
     plotter.add_axes(
         xlabel="Distance (m)",
         ylabel="Profile offset (m)",
-        zlabel="Elevation (m)",
+        zlabel="Depth (m)",
         line_width=2,
     )
     plotter.show_grid()
-
-    # Isometric-ish camera: slightly in front and above
     plotter.camera_position = "iso"
     plotter.camera.azimuth   = -30
     plotter.camera.elevation =  25
 
-    print("\nOpening 3D window — rotate with left-click, zoom with scroll.")
+    print("\nControls:")
+    print("  Left-click + drag  : rotate")
+    print("  Scroll             : zoom")
+    print("  Right-click + drag : pan")
+    print("  Drag slice handles : move orthogonal cut planes")
     plotter.show()
 
 
