@@ -63,7 +63,9 @@ def _has_line(row: pd.Series) -> bool:
 
 # ── Map building ──────────────────────────────────────────────────────────────
 
-def build_map(df: pd.DataFrame, show_types: set[str], basemap: str = "OpenStreetMap") -> folium.Map:
+def build_map(df: pd.DataFrame, show_types: set[str],
+              basemap: str = "OpenStreetMap",
+              selected_name: str | None = None) -> folium.Map:
     visible = df[df["type"].isin(show_types)]
     center = ([visible["lat"].mean(), visible["lon"].mean()]
               if not visible.empty else [51.752, 14.325])
@@ -77,6 +79,8 @@ def build_map(df: pd.DataFrame, show_types: set[str], basemap: str = "OpenStreet
         attr=bm["attr"] or "",
     )
 
+    has_selection = selected_name is not None
+
     seen: set[tuple] = set()
     for _, row in df.iterrows():
         if row["type"] not in show_types:
@@ -86,11 +90,20 @@ def build_map(df: pd.DataFrame, show_types: set[str], basemap: str = "OpenStreet
             continue
         seen.add(key)
 
+        is_selected = (row["name"] == selected_name)
         color  = LINE_COLORS.get(row["type"], "#555")
         fcolor = FILL_COLORS.get(row["type"], "#aaa")
         label  = TYPE_LABELS.get(row["type"], row["type"])
         tooltip = f"{row['name']} ({label})"
         popup_html = f"<b>{row['name']}</b>"
+
+        # Highlight selected, dim others
+        if has_selection and not is_selected:
+            weight, opacity, fill_opacity = 3, 0.25, 0.25
+        elif is_selected:
+            weight, opacity, fill_opacity = 8, 1.0, 1.0
+        else:
+            weight, opacity, fill_opacity = 5, 0.9, 0.9
 
         if _has_line(row):
             coords = [
@@ -100,19 +113,19 @@ def build_map(df: pd.DataFrame, show_types: set[str], basemap: str = "OpenStreet
             line = folium.PolyLine(
                 locations=coords,
                 color=color,
-                weight=5,
-                opacity=0.9,
+                weight=weight,
+                opacity=opacity,
                 tooltip=tooltip,
                 popup=folium.Popup(popup_html, max_width=220),
             )
             line.add_to(m)
-            # Direction arrow along the line
             PolyLineTextPath(
                 line,
                 "        ➤",
                 repeat=True,
                 offset=14,
-                attributes={"fill": color, "font-size": "16", "font-weight": "bold"},
+                attributes={"fill": color, "font-size": "16", "font-weight": "bold",
+                            "opacity": str(opacity)},
             ).add_to(m)
         else:
             folium.CircleMarker(
@@ -121,7 +134,8 @@ def build_map(df: pd.DataFrame, show_types: set[str], basemap: str = "OpenStreet
                 color=color,
                 fill=True,
                 fill_color=fcolor,
-                fill_opacity=0.9,
+                fill_opacity=fill_opacity,
+                opacity=opacity,
                 tooltip=tooltip,
                 popup=folium.Popup(popup_html, max_width=220),
             ).add_to(m)
@@ -288,7 +302,8 @@ def main() -> None:
     with col_map:
         st.markdown("#### Interactive map")
         st.caption("Click a line or marker to view results.")
-        fmap = build_map(df, visible_types, basemap)
+        fmap = build_map(df, visible_types, basemap,
+                         selected_name=st.session_state.get("selected_name"))
         map_data = st_folium(
             fmap,
             width=None,
