@@ -41,20 +41,20 @@ RES_Y = 2.0              # grid resolution Y (m)
 RES_Z = 1.0              # grid resolution Z (m)
 
 # ── ERT resistivity colormap ──────────────────────────────────────────────────
-# 11 colors for 11 bands between the 12 breakpoints below
+# 11 colors for 11 bands between the 12 breakpoints (matches Surfer profile images)
 _ERT_BOUNDS = [15, 25, 35, 55, 85, 115, 155, 200, 300, 500, 1000, 2000]
 _ERT_COLORS = [
-    "#00008B",  # 15–25     deep blue
-    "#005EC8",  # 25–35     blue
-    "#00BBEE",  # 35–55     cyan
-    "#00BB44",  # 55–85     green
-    "#AACC00",  # 85–115    yellow-green
-    "#FFEE00",  # 115–155   yellow
-    "#C8A870",  # 155–200   light brown / tan
-    "#FF8C00",  # 200–300   orange
-    "#EE0000",  # 300–500   red
+    "#0000AA",  # 15–25     dark blue
+    "#0055FF",  # 25–35     blue
+    "#00CCFF",  # 35–55     cyan
+    "#00FF99",  # 55–85     light green
+    "#AAFF00",  # 85–115    yellow-green
+    "#FFFF00",  # 115–155   yellow
+    "#AA7733",  # 155–200   brown / tan
+    "#FF8800",  # 200–300   orange
+    "#FF0000",  # 300–500   red
     "#880000",  # 500–1000  dark red / burgundy
-    "#440022",  # 1000–2000 dark purple / maroon
+    "#440033",  # 1000–2000 dark purple
 ]
 
 def _build_ert_cmap(n_lut: int = 512) -> mcolors.LinearSegmentedColormap:
