@@ -65,11 +65,15 @@ def _has_line(row: pd.Series) -> bool:
 
 def build_map(df: pd.DataFrame, show_types: set[str],
               basemap: str = "OpenStreetMap",
-              selected_name: str | None = None) -> folium.Map:
+              selected_name: str | None = None,
+              center: list | None = None,
+              zoom: int | None = None) -> folium.Map:
     visible = df[df["type"].isin(show_types)]
-    center = ([visible["lat"].mean(), visible["lon"].mean()]
-              if not visible.empty else [51.752, 14.325])
-    zoom = 14 if not visible.empty else 13
+    if center is None:
+        center = ([visible["lat"].mean(), visible["lon"].mean()]
+                  if not visible.empty else [51.752, 14.325])
+    if zoom is None:
+        zoom = 14 if not visible.empty else 13
 
     bm = BASEMAPS.get(basemap, BASEMAPS["OpenStreetMap"])
     m = folium.Map(
@@ -97,9 +101,9 @@ def build_map(df: pd.DataFrame, show_types: set[str],
         tooltip = f"{row['name']} ({label})"
         popup_html = f"<b>{row['name']}</b>"
 
-        # Highlight selected, dim others
+        # Highlight selected, dim others slightly
         if has_selection and not is_selected:
-            weight, opacity, fill_opacity = 3, 0.25, 0.25
+            weight, opacity, fill_opacity = 4, 0.5, 0.5
         elif is_selected:
             weight, opacity, fill_opacity = 8, 1.0, 1.0
         else:
@@ -285,6 +289,14 @@ def main() -> None:
         return
 
     df = load_inventory(zone)
+
+    # Reset map view and selection when the zone changes
+    if st.session_state.get("active_zone") != zone:
+        st.session_state["active_zone"]   = zone
+        st.session_state["selected_name"] = None
+        st.session_state["map_center"]    = None
+        st.session_state["map_zoom"]      = None
+
     st.title(f"Zone: {zone}")
 
     col_map, col_panel = st.columns([3, 2], gap="medium")
@@ -292,14 +304,28 @@ def main() -> None:
     with col_map:
         st.markdown("#### Interactive map")
         st.caption("Click a line or marker to view results.")
-        fmap = build_map(df, visible_types, basemap,
-                         selected_name=st.session_state.get("selected_name"))
+        fmap = build_map(
+            df, visible_types, basemap,
+            selected_name=st.session_state.get("selected_name"),
+            center=st.session_state.get("map_center"),
+            zoom=st.session_state.get("map_zoom"),
+        )
         map_data = st_folium(
             fmap,
             width=None,
             height=540,
-            returned_objects=["last_clicked", "last_object_clicked_tooltip"],
+            returned_objects=["last_clicked", "last_object_clicked_tooltip",
+                              "center", "zoom"],
         )
+
+    # Persist current map view so reruns don't reset it
+    if map_data:
+        c = map_data.get("center")
+        if c:
+            st.session_state["map_center"] = [c["lat"], c["lng"]]
+        z = map_data.get("zoom")
+        if z:
+            st.session_state["map_zoom"] = z
 
     # --- Detect selection ---
     # 1. Tooltip click (PolyLine or CircleMarker)
