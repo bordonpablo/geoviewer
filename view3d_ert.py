@@ -24,6 +24,8 @@ XYZ_DIR   = r"data\Weisses Lauch\xyz"
 Y_SPACING = 15.0          # metres between profiles
 
 PROFILES = {
+    1:  "Profil 1-Whlg.721pkt-corr.xyz",
+    2:  "Profil 2 -Messung1-865pkt-corr.xyz",
     4:  "profil4-865pkt-corr.xyz",
     5:  "Profile 5 WS-2-12+R1-corr.xyz",
     6:  "Profile 6 WS-2-12+R1.xyz",
