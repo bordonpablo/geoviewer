@@ -202,7 +202,18 @@ def main() -> None:
         show_points=False,
     )
 
-    # ── Semi-transparent shell + orthogonal slices ────────────────────────────
+    # ── Pre-compute fence panels (one solid slice per profile Y position) ───────
+    # Hidden at startup; shown in FENCE mode.  This is the standard geophysical
+    # pseudo-3D fence diagram — much cleaner than a solid outer shell.
+    fence_actors = []
+    for num in valid_nums:
+        y0 = (num - 4) * Y_SPACING
+        panel = vol_clean.slice(normal=[0, 1, 0], origin=[0, y0, 0])
+        actor = plotter.add_mesh(panel, show_scalar_bar=False, **mesh_kw_no_bar)
+        actor.visibility = False
+        fence_actors.append(actor)
+
+    # ── Transparent shell + orthogonal slices (SLICES mode) ──────────────────
     shell_actor = plotter.add_mesh(vol_clean, opacity=0.06,
                                    show_scalar_bar=False, **mesh_kw_no_bar)
     plotter.add_mesh_slice_orthogonal(vol_clean, **mesh_kw)
@@ -210,24 +221,30 @@ def main() -> None:
     # ── Mode indicator text ───────────────────────────────────────────────────
     state = {"mode": "slices"}
     mode_actor = plotter.add_text(
-        "Mode: SLICES — drag planes to cut  |  T: switch to VOLUME",
+        "Mode: SLICES — drag planes to cut  |  T: switch to FENCE",
         position="lower_left", font_size=9, color="dimgray",
     )
-    profile_actor = [None]   # mutable container for the right-click label
+    profile_actor = [None]
 
-    # ── Toggle T: slices (transparent shell) ↔ volume (solid shell) ──────────
+    # ── Toggle T: SLICES ↔ FENCE diagram ─────────────────────────────────────
     def toggle_mode():
         if state["mode"] == "slices":
-            shell_actor.prop.opacity = 0.75
-            state["mode"] = "volume"
+            # Hide shell, show solid fence panels
+            shell_actor.visibility = False
+            for a in fence_actors:
+                a.visibility = True
+            state["mode"] = "fence"
             mode_actor.SetInput(
-                "Mode: VOLUME — full 3D block visible  |  T: switch to SLICES"
+                "Mode: FENCE — solid panels per profile  |  T: switch to SLICES"
             )
         else:
-            shell_actor.prop.opacity = 0.06
+            # Show shell, hide fence panels
+            shell_actor.visibility = True
+            for a in fence_actors:
+                a.visibility = False
             state["mode"] = "slices"
             mode_actor.SetInput(
-                "Mode: SLICES — drag planes to cut  |  T: switch to VOLUME"
+                "Mode: SLICES — drag planes to cut  |  T: switch to FENCE"
             )
         plotter.render()
 
