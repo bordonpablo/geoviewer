@@ -16,6 +16,7 @@ import os
 import numpy as np
 import pandas as pd
 import pyvista as pv
+import matplotlib.colors as mcolors
 from scipy.interpolate import griddata
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -34,10 +35,44 @@ PROFILES = {
     12: "Profile 12 .xyz",
 }
 
-CLIM      = [15.0, 2000.0]   # Ohm*m color limits
-RES_X     = 2.0              # grid resolution X (m)
-RES_Y     = 2.0              # grid resolution Y (m)
-RES_Z     = 1.0              # grid resolution Z (m)
+CLIM  = [15.0, 2000.0]   # Ohm*m color limits (log scale)
+RES_X = 2.0              # grid resolution X (m)
+RES_Y = 2.0              # grid resolution Y (m)
+RES_Z = 1.0              # grid resolution Z (m)
+
+# ── ERT resistivity colormap ──────────────────────────────────────────────────
+# 11 colors for 11 bands between the 12 breakpoints below
+_ERT_BOUNDS = [15, 25, 35, 55, 85, 115, 155, 200, 300, 500, 1000, 2000]
+_ERT_COLORS = [
+    "#00008B",  # 15–25     deep blue
+    "#005EC8",  # 25–35     blue
+    "#00BBEE",  # 35–55     cyan
+    "#00BB44",  # 55–85     green
+    "#AACC00",  # 85–115    yellow-green
+    "#FFEE00",  # 115–155   yellow
+    "#C8A870",  # 155–200   light brown / tan
+    "#FF8C00",  # 200–300   orange
+    "#EE0000",  # 300–500   red
+    "#880000",  # 500–1000  dark red / burgundy
+    "#440022",  # 1000–2000 dark purple / maroon
+]
+
+def _build_ert_cmap(n_lut: int = 512) -> mcolors.LinearSegmentedColormap:
+    """
+    Build a LinearSegmentedColormap that respects the ERT BoundaryNorm breakpoints
+    in log space, so PyVista's log_scale=True maps colors correctly.
+    """
+    listed  = mcolors.ListedColormap(_ERT_COLORS)
+    bnorm   = mcolors.BoundaryNorm(_ERT_BOUNDS, listed.N)
+    # Sample the BoundaryNorm at log-spaced values across [CLIM[0], CLIM[1]].
+    # PyVista with log_scale=True maps [log(clim0), log(clim1)] → [0, 1] linearly,
+    # so sampling here in log space makes the two transformations consistent.
+    log_samples = np.linspace(np.log10(CLIM[0]), np.log10(CLIM[1]), n_lut)
+    ohm_samples = 10.0 ** log_samples
+    rgba        = listed(bnorm(ohm_samples))
+    return mcolors.LinearSegmentedColormap.from_list("ERT_rho", rgba, N=n_lut)
+
+ERT_CMAP = _build_ert_cmap()
 
 # ── I/O ───────────────────────────────────────────────────────────────────────
 
@@ -128,14 +163,14 @@ def main() -> None:
 
     mesh_kw = dict(
         scalars="Resistivity",
-        cmap="Spectral_r",
+        cmap=ERT_CMAP,
         clim=CLIM,
-        log_scale=True,
+        log_scale=True,          # PyVista maps log([15,2000])→[0,1]; LUT was sampled the same way
         scalar_bar_args=dict(
             title="Resistivity (Ohm*m)",
             title_font_size=14,
             label_font_size=11,
-            n_labels=6,
+            n_labels=7,           # ~15, 30, 60, 120, 250, 500, 2000
             vertical=True,
             position_x=0.89,
             position_y=0.15,
