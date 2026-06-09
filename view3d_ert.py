@@ -1,47 +1,82 @@
 """
-3D ERT viewer — Weisses Lauch, profiles 4-12.
+3D ERT viewer — multi-zone.
 
-Run from the geoviewer root:
-    .venv/Scripts/python view3d_ert.py
+Usage:
+    .venv/Scripts/python view3d_ert.py weisseslauch
+    .venv/Scripts/python view3d_ert.py kleinsee
 
 What it does:
-  - Reads all Res2DInv XYZ exports (skip / comment lines, drop Rho <= 0)
-  - Places each profile at Y = 0, 15, 30 ... 120 m
-  - Interpolates with scipy.griddata onto a 2x2x1 m regular 3D grid
-  - Renders as a solid volume with interactive orthogonal slices
-  - Color scale: real Ohm*m, log scale, clim=[15, 2000]
+  - Reads Res2DInv XYZ exports for the chosen zone
+  - Places each profile at evenly spaced Y positions
+  - Interpolates with scipy.griddata onto a regular 3D grid
+  - Renders as a solid volume with interactive slices and fence diagram
+  - Color scale: real Ohm*m, log scale
 """
 
 import os
+import sys
 import numpy as np
 import pandas as pd
 import pyvista as pv
 import matplotlib.colors as mcolors
 from scipy.interpolate import griddata
 
-# ── Config ────────────────────────────────────────────────────────────────────
-XYZ_DIR   = r"data\Weisses Lauch\xyz"
-Y_SPACING = 15.0          # metres between profiles
-
-PROFILES = {
-    1:  "Profil 1-Whlg.721pkt-corr.xyz",
-    2:  "Profil 2 -Messung1-865pkt-corr.xyz",
-    4:  "profil4-865pkt-corr.xyz",
-    5:  "Profile 5 WS-2-12+R1-corr.xyz",
-    6:  "Profile 6 WS-2-12+R1.xyz",
-    7:  "Profile 7 WS-12-2-corr.xyz",
-    8:  "Profile 8 WS-12-2-corr.xyz",
-    9:  "Profile 9 WS-48-2-13-cor.xyz",
-    10: "Profile 10 WS-48-12-corr.xyz",
-    11: "Profile 11 WS-48-corr_bis.xyz",
-    12: "Profile 12 .xyz",
+# ── Zone configs ──────────────────────────────────────────────────────────────
+ZONES = {
+    "weisseslauch": {
+        "title":     "Weisses Lauch",
+        "xyz_dir":   r"data\Weisses Lauch\xyz",
+        "y_ref":     4,       # profile number placed at Y = 0
+        "y_spacing": 15.0,
+        "ve":        5,
+        "clim":      [15.0, 2000.0],
+        "res":       (2.0, 2.0, 1.0),
+        "profiles": {
+            1:  "Profil 1-Whlg.721pkt-corr.xyz",
+            2:  "Profil 2 -Messung1-865pkt-corr.xyz",
+            4:  "profil4-865pkt-corr.xyz",
+            5:  "Profile 5 WS-2-12+R1-corr.xyz",
+            6:  "Profile 6 WS-2-12+R1.xyz",
+            7:  "Profile 7 WS-12-2-corr.xyz",
+            8:  "Profile 8 WS-12-2-corr.xyz",
+            9:  "Profile 9 WS-48-2-13-cor.xyz",
+            10: "Profile 10 WS-48-12-corr.xyz",
+            11: "Profile 11 WS-48-corr_bis.xyz",
+            12: "Profile 12 .xyz",
+        },
+    },
+    "kleinsee": {
+        "title":     "Kleinsee",
+        "xyz_dir":   r"data\Kleinsee\xyz",
+        "y_ref":     1,       # profile 1 at Y = 0
+        "y_spacing": 25.0,
+        "ve":        5,
+        "clim":      [15.0, 2000.0],
+        "res":       (2.0, 2.0, 1.0),
+        "profiles": {
+            1: "profile1.xyz",
+            2: "profile2.xyz",
+            3: "profile3.xyz",
+            4: "profile4.xyz",
+        },
+    },
 }
 
-CLIM  = [15.0, 2000.0]   # Ohm*m color limits (log scale)
-RES_X = 2.0              # grid resolution X (m)
-RES_Y = 2.0              # grid resolution Y (m)
-RES_Z = 1.0              # grid resolution Z (m)
-VE    = 5                # vertical exaggeration (depth axis × VE for display)
+# ── Select zone from command-line argument ────────────────────────────────────
+if len(sys.argv) < 2 or sys.argv[1].lower() not in ZONES:
+    print(f"Usage:  python view3d_ert.py <zone>")
+    print(f"Zones:  {', '.join(ZONES.keys())}")
+    sys.exit(1)
+
+cfg       = ZONES[sys.argv[1].lower()]
+XYZ_DIR   = cfg["xyz_dir"]
+PROFILES  = cfg["profiles"]
+Y_SPACING = cfg["y_spacing"]
+Y_REF     = cfg["y_ref"]
+VE        = cfg["ve"]
+CLIM      = cfg["clim"]
+RES_X, RES_Y, RES_Z = cfg["res"]
+TITLE     = cfg["title"]
 
 # ── ERT resistivity colormap ──────────────────────────────────────────────────
 # 11 colors for 11 bands between the 12 breakpoints (matches Surfer profile images)
@@ -110,7 +145,7 @@ def main() -> None:
             print(f"  [skip] not found: {fname}")
             continue
         df   = read_xyz(path)
-        y0   = (num - 4) * Y_SPACING
+        y0   = (num - Y_REF) * Y_SPACING
         px.extend(df["X"].values)
         py.extend(np.full(len(df), y0))
         pz.extend(df["Z"].values)
@@ -166,7 +201,7 @@ def main() -> None:
     # ── 4. Render ─────────────────────────────────────────────────────────────
     print("Opening PyVista window ...")
     plotter = pv.Plotter(window_size=(1500, 900),
-                         title="Weisses Lauch — ERT 3D  |  T = toggle mode  |  right-click = identify profile")
+                         title=f"{TITLE} — ERT 3D  |  T = toggle mode  |  right-click = identify profile")
     plotter.set_background("white")
 
     mesh_kw = dict(
@@ -196,7 +231,7 @@ def main() -> None:
                          os.path.isfile(os.path.join(XYZ_DIR, PROFILES[n])))
 
     # Profile labels: placed left of block, above the (VE-scaled) surface
-    label_pts   = np.array([[x_min - 8, (n - 4) * Y_SPACING, z_max * VE + 5]
+    label_pts   = np.array([[x_min - 8, (n - Y_REF) * Y_SPACING, z_max * VE + 5]
                              for n in valid_nums], dtype=float)
     label_texts = [f"Profile {n}" for n in valid_nums]
 
@@ -271,7 +306,7 @@ def main() -> None:
     # ── Pre-compute fence panels (one solid slice per profile Y position) ───────
     fence_actors = []
     for num in valid_nums:
-        y0 = (num - 4) * Y_SPACING
+        y0 = (num - Y_REF) * Y_SPACING
         panel = vol_disp.slice(normal=[0, 1, 0], origin=[0, y0, 0])
         if panel.n_points == 0:
             continue
@@ -318,7 +353,7 @@ def main() -> None:
 
     # ── Right-click: identify nearest profile ─────────────────────────────────
     # Build a Y→profile-number lookup
-    y_map = {n: (n - 4) * Y_SPACING for n in valid_nums}
+    y_map = {n: (n - Y_REF) * Y_SPACING for n in valid_nums}
 
     def on_right_click(pos_screen):
         # Unproject screen (x,y) to world using the hardware picker
