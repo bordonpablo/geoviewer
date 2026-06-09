@@ -3,3 +3,6 @@ folium
 streamlit-folium
 pandas
 pillow
+pyproj
+pyvista[all]
+scipy

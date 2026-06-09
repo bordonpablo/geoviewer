@@ -9,14 +9,33 @@ There are two ways to explore the data:
 
 ---
 
-## Setup
+## Online deployment
+
+The map viewer is deployed on Streamlit Community Cloud:
+
+👉 **[geoviewer.streamlit.app](https://bordonpablo-geoviewer.streamlit.app)**
+
+It updates automatically whenever changes are pushed to the `main` branch.
+
+---
+
+## Local setup
 
 Python 3.10+ required.
 
+**Map viewer only:**
 ```bash
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
+streamlit run app.py
+```
+
+**Map viewer + 3D viewer:**
+```bash
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements_dev.txt
 ```
 
 ---
