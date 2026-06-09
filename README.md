@@ -1,41 +1,32 @@
-# GeoViewer — ERT profiles from Brandenburg peatlands
+# GeoViewer
 
 ![3D ERT view](docs/screenshots/Weisses%20Lauch%203d%20view.png)
 
-This project visualizes electrical resistivity tomography (ERT) data from two small lakes in the Cottbus–Brandenburg area of northeastern Germany: **Weißes Lauch** and **Kleinsee**.
+ERT survey results from two small lakes in the Cottbus-Brandenburg area of northeastern Germany: **Weißes Lauch** and **Kleinsee**.
 
-## Why ERT near peat-bearing lakes?
+## Why ERT near peat lakes?
 
-Brandenburg sits on a glacial landscape shaped during the last ice age — layers of sand, gravel, and clay left behind by retreating glaciers, often with lakes and wetlands in between. Peat forms in these wet depressions over thousands of years and is ecologically important because it stores large amounts of carbon.
+Brandenburg is a glacial landscape. During the last ice age, retreating glaciers left behind layers of sand, gravel and clay, along with many small lakes and wetlands where peat has been accumulating ever since. That peat matters because it stores a lot of carbon, and knowing how thick it is and where it sits is useful.
 
-ERT is useful here because the different materials have very different electrical resistivities:
+ERT works well here because the materials have very different resistivities. Peat is wet and organic so it conducts well. Dry sand and gravel are poor conductors. Clay falls somewhere in the middle. That contrast is what shows up in the inversion images.
 
-- **Peat**: very low resistivity — it's wet and organic
-- **Clay**: low resistivity — fine-grained and holds water
-- **Sand and gravel**: high resistivity — dry or well-drained
-- **Water-saturated sand**: intermediate
+The two sites were surveyed with multiple parallel profiles, and the results are what this viewer lets you explore.
 
-By measuring how electrical current flows through the ground, ERT profiles let us see the shape and depth of peat layers, the thickness of glacial sediments, and the transition between different geological units — without drilling.
+## Two ways to look at the data
 
----
-
-## Two ways to explore the data
-
-**1. Streamlit web app** — no installation needed, runs in the browser
+**In the browser (no setup needed)**
 
 > 🔗 **[geoviewer-ghwnbvhsbfwvkvxflu2msr.streamlit.app](https://geoviewer-ghwnbvhsbfwvkvxflu2msr.streamlit.app)**
 
-Click on any profile line on the map to see the ERT inversion image for that transect.
+Pick a zone, click a profile line on the map, and the inversion image opens on the right.
 
-**2. Local 3D viewer** — runs on your own machine
+**As a 3D block on your machine**
 
-All profiles from a survey zone stacked into an interpolated 3D resistivity block. Needs Python and a clone of this repo.
+All profiles stacked and interpolated into a 3D resistivity volume. You need Python and a local copy of the repo for this one.
 
 ![Kleinsee](docs/images/Kleinsee.jpg)
 
----
-
-## Setup (for the 3D viewer)
+## Setup for the 3D viewer
 
 ```bash
 git clone https://github.com/bordonpablo/geoviewer.git
@@ -46,46 +37,40 @@ python -m venv .venv
 pip install -r requirements_dev.txt
 ```
 
----
+## Running
 
-## Running things
-
-**Web app (local):**
+Web app locally:
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-**3D viewer:**
+3D viewer:
 ```bash
 python view3d_ert.py weisseslauch
 python view3d_ert.py kleinsee
 ```
 
-Controls once the 3D window opens:
+Controls in the 3D window:
 
 | Key / action | Effect |
 |---|---|
-| `T` | Switch between interactive cut planes and fence diagram |
+| `T` | Switch between cut planes and fence diagram |
 | Right-click | Show nearest profile name |
 | Left-click drag | Rotate |
 | Scroll | Zoom |
 | `R` | Reset camera |
 | `P` | Save screenshot |
 
----
-
 ## Color scale
 
-Matches the Surfer output from the field reports. Log scale, 15–2000 Ω·m:
+Log scale from 15 to 2000 Ohm/m, matching the Surfer output from the field reports:
 
-`dark blue` → `cyan` → `green` → `yellow` → `brown` → `orange` → `red` → `dark purple`
-
----
+dark blue / cyan / green / yellow / brown / orange / red / dark purple
 
 ## Adding a new zone
 
-**Web app** — create `data/<zone>/inventory.csv`:
+For the web app, create `data/<zone>/inventory.csv` with these columns:
 
 | Column | What it is |
 |---|---|
@@ -97,9 +82,9 @@ Matches the Surfer output from the field reports. Log scale, 15–2000 Ω·m:
 | `image_path` | Path to inversion image |
 | `description` | Any notes |
 
-The zone appears automatically in the app on next restart.
+The zone shows up automatically in the app on next restart.
 
-**3D viewer** — add an entry to `ZONES` at the top of `view3d_ert.py`:
+For the 3D viewer, add an entry to the `ZONES` dict at the top of `view3d_ert.py`:
 
 ```python
 "mynewzone": {
@@ -114,16 +99,14 @@ The zone appears automatically in the app on next restart.
 },
 ```
 
----
-
 ## Project structure
 
 ```
 geoviewer/
-├── app.py                 ← web map viewer
-├── view3d_ert.py          ← 3D viewer
-├── requirements.txt       ← web app only
-├── requirements_dev.txt   ← full local setup (includes PyVista)
+├── app.py                 <- web map viewer
+├── view3d_ert.py          <- 3D viewer
+├── requirements.txt       <- web app only
+├── requirements_dev.txt   <- full local setup (includes PyVista)
 └── data/
     ├── Weisses Lauch/
     │   ├── inventory.csv
@@ -136,8 +119,6 @@ geoviewer/
         ├── coordinates/
         └── xyz/
 ```
-
----
 
 ## Stack
 
