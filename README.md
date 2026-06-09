@@ -1,37 +1,21 @@
 # GeoViewer
 
-Interactive visualization tool for geophysical survey results from the **Cottbus–Brandenburg** area, Germany. Covers three study zones:
+A Python tool to visualize geophysical survey data from two field sites in the Cottbus–Brandenburg region of Germany: **Weisses Lauch** and **Kleinsee**. Both sites have ERT inversion profiles; Weisses Lauch also has DUALEM electromagnetic data.
 
-- **Cottbus** — reference zone with dummy data
-- **Weisses Lauch** — ERT profiles (1–12) and DUALEM EM surveys
-- **Kleinsee** — ERT profiles (1–4)
+There are two ways to explore the data:
 
-Two viewers are included:
-
-| Viewer | How to run | What it shows |
-|---|---|---|
-| **Map viewer** (Streamlit) | `streamlit run app.py` | Interactive web map with ERT inversion images and EM conductivity charts |
-| **3D viewer** (PyVista) | `python view3d_ert.py <zone>` | Interpolated 3D resistivity block with fence diagram and orthogonal slices |
+- **Map viewer** — a Streamlit web app where you click profile lines on a map to see inversion images and EM charts
+- **3D viewer** — a standalone PyVista window that stacks all ERT profiles into an interpolated 3D resistivity block
 
 ---
 
-## Requirements
+## Setup
 
-- Python 3.10 or higher
-- Windows (tested on Windows 11)
-
----
-
-## Installation
+Python 3.10+ required.
 
 ```bash
-# 1. Create virtual environment
 python -m venv .venv
-
-# 2. Activate (Windows)
 .\.venv\Scripts\activate
-
-# 3. Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -43,19 +27,13 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Opens automatically at `http://localhost:8501`. Or use the Chrome launcher:
+This opens `http://localhost:8501`. To open directly in Chrome:
 
 ```bash
 .\launch.ps1
 ```
 
-### Features
-- Zone selector (auto-detects subfolders under `data/`)
-- ERT and EM profile lines drawn on an interactive map (OpenStreetMap, Google Satellite, Google Hybrid)
-- Click any profile line to view its ERT inversion image and EM conductivity chart (HL/VL)
-- Full-screen image modal for ERT profiles
-- Selected profile highlighted; others dimmed
-- Profile name labels on the map
+Pick a zone from the sidebar, then click any profile line on the map. ERT inversion images open full-screen; EM profiles show HL/VL conductivity charts. Basemap can be switched between OpenStreetMap, Google Satellite, and Google Hybrid.
 
 ---
 
@@ -66,68 +44,49 @@ python view3d_ert.py weisseslauch
 python view3d_ert.py kleinsee
 ```
 
-Reads Res2DInv XYZ exports, interpolates all profiles onto a regular 3D grid (scipy griddata, 2×2×1 m resolution), and renders an interactive PyVista scene.
+Reads all Res2DInv XYZ exports for the zone, places each profile at its survey Y position, and interpolates onto a 2×2×1 m 3D grid. Depth is exaggerated 5× so the internal structure is readable.
 
-### Controls
+**Controls:**
 
 | Key / Action | Effect |
 |---|---|
-| `T` | Toggle between **Slices** mode (interactive cut planes) and **Fence** mode (solid panels per profile) |
-| Right-click | Identify nearest profile (shown top-right) |
-| Left-click + drag | Rotate |
+| `T` | Switch between cut-plane slices and fence diagram view |
+| Right-click | Show nearest profile name |
+| Left-click drag | Rotate |
 | Scroll | Zoom |
-| Right-click + drag | Pan |
+| Right-click drag | Pan |
 | `R` | Reset camera |
-| `X` / `Y` / `Z` | Snap to axis view |
+| `X` / `Y` / `Z` | Snap to axis |
 | `P` | Save screenshot |
-| Drag plane handles | Move orthogonal cut planes (Slices mode) |
 
-### Color scale
-Custom ERT colormap matching Surfer output, log scale 15–2000 Ω·m:
-
-| Range (Ω·m) | Color |
-|---|---|
-| 15–25 | Dark blue |
-| 25–35 | Blue |
-| 35–55 | Cyan |
-| 55–85 | Light green |
-| 85–115 | Yellow-green |
-| 115–155 | Yellow |
-| 155–200 | Brown / tan |
-| 200–300 | Orange |
-| 300–500 | Red |
-| 500–1000 | Dark red |
-| 1000–2000 | Dark purple |
+The colormap matches the Surfer output used in the field reports (log scale, 15–2000 Ω·m, dark blue → cyan → green → yellow → orange → red → dark purple).
 
 ---
 
 ## Adding a new zone
 
-### Map viewer
-1. Create `data/<zone_name>/` with subfolders `ert/`, `em/`, `em_values/`
-2. Add `inventory.csv`:
+**Map viewer** — create `data/<zone>/` with an `inventory.csv`:
 
 | Column | Description |
 |---|---|
-| `name` | Profile identifier |
+| `name` | Profile name |
 | `type` | `ERT` or `EM` |
-| `zone` | Zone name (matches subfolder) |
-| `lat` / `lon` | WGS84 center coordinates |
-| `start_lat/lon`, `end_lat/lon` | Line endpoints (for drawing on map) |
-| `image_path` | Relative path to inversion image (PNG/JPG/BMP) |
-| `data_path` | Relative path to EM CSV (columns `x`, `HL`, `VL`) |
-| `description` | Free text |
+| `zone` | Zone name |
+| `lat`, `lon` | WGS84 center point |
+| `start_lat/lon`, `end_lat/lon` | Line endpoints |
+| `image_path` | Path to inversion image |
+| `data_path` | Path to EM CSV (`x`, `HL`, `VL` columns) |
+| `description` | Any notes |
 
-3. Restart the app — the zone appears automatically in the sidebar selector.
+The zone appears automatically in the app on next restart.
 
-### 3D viewer
-Add a new entry to the `ZONES` dict at the top of `view3d_ert.py`:
+**3D viewer** — add an entry to the `ZONES` dict at the top of `view3d_ert.py`:
 
 ```python
 "mynewzone": {
     "title":     "My New Zone",
     "xyz_dir":   r"data\MyNewZone\xyz",
-    "y_ref":     1,        # profile number placed at Y = 0
+    "y_ref":     1,        # profile number at Y = 0
     "y_spacing": 15.0,     # metres between profiles
     "ve":        5,        # vertical exaggeration
     "clim":      [15.0, 2000.0],
@@ -139,41 +98,38 @@ Add a new entry to the `ZONES` dict at the top of `view3d_ert.py`:
 },
 ```
 
-Then run: `python view3d_ert.py mynewzone`
-
 ---
 
 ## Project structure
 
 ```
 geoviewer/
-├── app.py                    ← Streamlit map viewer
-├── view3d_ert.py             ← PyVista 3D viewer
-├── launch.ps1                ← Chrome launcher for map viewer
+├── app.py                    ← map viewer
+├── view3d_ert.py             ← 3D viewer
+├── launch.ps1                ← opens map viewer in Chrome
 ├── requirements.txt
 └── data/
-    ├── cottbus/              ← dummy data (reference zone)
     ├── Weisses Lauch/
     │   ├── inventory.csv
-    │   ├── ERT images/       ← inversion images (JPG/BMP)
-    │   ├── em_values/        ← per-profile EM CSVs
-    │   ├── coordinates/      ← UTM profile coordinates
-    │   └── xyz/              ← Res2DInv XYZ exports for 3D viewer
+    │   ├── ERT images/
+    │   ├── em_values/
+    │   ├── coordinates/
+    │   └── xyz/
     └── Kleinsee/
         ├── inventory.csv
-        ├── ERT values/       ← inversion images (JPG/TIF)
+        ├── ERT values/
         ├── coordinates/
-        └── xyz/              ← Res2DInv XYZ exports for 3D viewer
+        └── xyz/
 ```
 
 ---
 
-## Stack
+## Dependencies
 
-- [Streamlit](https://streamlit.io) — web app framework
+- [Streamlit](https://streamlit.io) — web app
 - [Folium](https://python-visualization.github.io/folium/) + streamlit-folium — interactive map
-- [Plotly](https://plotly.com/python/) — EM conductivity charts
+- [Plotly](https://plotly.com/python/) — EM charts
 - [Pillow](https://pillow.readthedocs.io) — image display
-- [PyVista](https://pyvista.org) — 3D visualization
-- [SciPy](https://scipy.org) — 3D grid interpolation
-- [pyproj](https://pyproj4.github.io/pyproj/) — UTM → WGS84 coordinate conversion
+- [PyVista](https://pyvista.org) — 3D rendering
+- [SciPy](https://scipy.org) — 3D interpolation
+- [pyproj](https://pyproj4.github.io/pyproj/) — UTM to WGS84 conversion
