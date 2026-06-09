@@ -49,7 +49,7 @@ ZONES = {
         "title":     "Kleinsee",
         "xyz_dir":   r"data\Kleinsee\xyz",
         "y_ref":     1,       # profile 1 at Y = 0
-        "y_spacing": 25.0,
+        "y_spacing": 15.0,
         "ve":        5,
         "clim":      [15.0, 2000.0],
         "res":       (2.0, 2.0, 1.0),
