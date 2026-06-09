@@ -240,6 +240,34 @@ def main() -> None:
     plotter.add_text(f"VE = {VE}×", position="lower_right",
                      font_size=10, color="dimgray")
 
+    # ── Distance ruler along X (front edge of block, at surface level) ───────
+    dist_y = y_min - 8          # in front of the block
+    dist_z = z_max * VE + 1     # just above the scaled surface
+    tick_xs     = np.arange(
+        round(x_min / 20) * 20,
+        x_max + 1, 20
+    )                           # ticks every 20 m
+    dist_pts    = np.array([[x, dist_y, dist_z] for x in tick_xs])
+    dist_labels = [f"{int(x)} m" for x in tick_xs]
+
+    plotter.add_point_labels(
+        dist_pts, dist_labels,
+        font_size=11,
+        bold=False,
+        text_color="black",
+        shape=None,
+        always_visible=True,
+        show_points=True,
+        point_color="black",
+        point_size=5,
+    )
+    # Horizontal spine of the distance ruler
+    dist_spine = pv.Line(
+        [x_min, dist_y, dist_z],
+        [x_max, dist_y, dist_z],
+    )
+    plotter.add_mesh(dist_spine, color="black", line_width=2)
+
     # ── Pre-compute fence panels (one solid slice per profile Y position) ───────
     fence_actors = []
     for num in valid_nums:
