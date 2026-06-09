@@ -225,7 +225,7 @@ def main() -> None:
         font_size=11,
         bold=False,
         text_color="black",
-        shape="none",
+        shape=None,
         always_visible=True,
         show_points=True,
         point_color="black",
