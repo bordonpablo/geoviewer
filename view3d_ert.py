@@ -24,7 +24,7 @@ from scipy.interpolate import griddata
 # ── Zone configs ──────────────────────────────────────────────────────────────
 ZONES = {
     "weisseslauch": {
-        "title":     "Weisses Lauch",
+        "title":     "Weißes Lauch",
         "xyz_dir":   r"data\Weisses Lauch\xyz",
         "y_ref":     4,       # profile number placed at Y = 0
         "y_spacing": 15.0,

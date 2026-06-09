@@ -17,6 +17,9 @@ LINE_COLORS = {"ERT": "#2166ac", "EM": "#1a9641"}
 FILL_COLORS = {"ERT": "#6baed6", "EM": "#74c476"}
 TYPE_LABELS = {"ERT": "ERT", "EM": "EM"}
 
+# Display names for zones whose folder name differs from the proper spelling
+ZONE_LABELS = {"Weisses Lauch": "Weißes Lauch"}
+
 BASEMAPS = {
     "OpenStreetMap": {
         "tiles": "OpenStreetMap",
@@ -214,11 +217,12 @@ def show_results(df_zone: pd.DataFrame, profile_name: str) -> None:
         return
 
     meta = profile_rows.iloc[0]
-    st.subheader(f"{profile_name}  ·  {meta['zone']}")
+    zone_display = ZONE_LABELS.get(meta['zone'], meta['zone'])
+    st.subheader(f"{profile_name}  ·  {zone_display}")
 
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f"**Zone:** {meta['zone']}")
+        st.markdown(f"**Zone:** {zone_display}")
     with c2:
         st.markdown(f"**Center coords:** {float(meta['lat']):.5f}, {float(meta['lon']):.5f}")
 
@@ -261,7 +265,10 @@ def render_sidebar(zones: list[str]) -> tuple[str, set[str], str]:
         st.sidebar.error("No zones found under 'data/'.")
         return "", set(), "OpenStreetMap"
 
-    zone = st.sidebar.selectbox("Study zone", zones)
+    zone = st.sidebar.selectbox(
+        "Study zone", zones,
+        format_func=lambda z: ZONE_LABELS.get(z, z),
+    )
 
     st.sidebar.markdown("#### Show on map")
     show_ert = st.sidebar.checkbox("ERT", value=True)

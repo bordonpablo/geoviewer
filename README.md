@@ -1,6 +1,6 @@
 # GeoViewer
 
-A Python tool to visualize geophysical survey data from two field sites in the Cottbus–Brandenburg region of Germany: **Weisses Lauch** and **Kleinsee**. Both sites have ERT inversion profiles; Weisses Lauch also has DUALEM electromagnetic data.
+A Python tool to visualize geophysical survey data from two field sites in the Cottbus–Brandenburg region of Germany: **Weißes Lauch** and **Kleinsee**. Both sites have ERT inversion profiles; Weißes Lauch also has DUALEM electromagnetic data.
 
 There are two ways to explore the data:
 
@@ -109,7 +109,7 @@ geoviewer/
 ├── launch.ps1                ← opens map viewer in Chrome
 ├── requirements.txt
 └── data/
-    ├── Weisses Lauch/
+    ├── Weißes Lauch/
     │   ├── inventory.csv
     │   ├── ERT images/
     │   ├── em_values/
