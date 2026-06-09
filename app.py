@@ -6,16 +6,15 @@ import streamlit as st
 import folium
 from folium.plugins import PolyLineTextPath
 from streamlit_folium import st_folium
-import plotly.graph_objects as go
 from PIL import Image
 
 st.set_page_config(page_title="GeoViewer", page_icon="🌍", layout="wide")
 
 DATA_ROOT = "data"
 
-LINE_COLORS = {"ERT": "#2166ac", "EM": "#1a9641"}
-FILL_COLORS = {"ERT": "#6baed6", "EM": "#74c476"}
-TYPE_LABELS = {"ERT": "ERT", "EM": "EM"}
+LINE_COLORS = {"ERT": "#2166ac"}
+FILL_COLORS = {"ERT": "#6baed6"}
+TYPE_LABELS = {"ERT": "ERT"}
 
 # Display names for zones whose folder name differs from the proper spelling
 ZONE_LABELS = {"Weisses Lauch": "Weißes Lauch"}
@@ -183,32 +182,6 @@ def _ert_image_modal(img_path: str, title: str) -> None:
     st.image(Image.open(img_path), use_container_width=True)
 
 
-def show_em_chart(csv_path: str, name: str) -> None:
-    if not os.path.isfile(csv_path):
-        st.warning(f"CSV not found: {csv_path}")
-        return
-    df = pd.read_csv(csv_path)
-    fig = go.Figure()
-    if "HL" in df.columns:
-        fig.add_trace(go.Scatter(
-            x=df["x"], y=df["HL"], name="HL (Horizontal)",
-            mode="lines", line=dict(color="#1a9641", width=2),
-        ))
-    if "VL" in df.columns:
-        fig.add_trace(go.Scatter(
-            x=df["x"], y=df["VL"], name="VL (Vertical)",
-            mode="lines", line=dict(color="#9b59b6", width=2),
-        ))
-    fig.update_layout(
-        title=f"Apparent conductivity — {name}",
-        xaxis_title="Distance (m)",
-        yaxis_title="Conductivity (mS/m)",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        height=320,
-        margin=dict(l=40, r=20, t=55, b=40),
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
 
 def show_results(df_zone: pd.DataFrame, profile_name: str) -> None:
     profile_rows = df_zone[df_zone["name"] == profile_name]
@@ -244,13 +217,6 @@ def show_results(df_zone: pd.DataFrame, profile_name: str) -> None:
         elif img_path:
             st.warning(f"ERT image not found: {img_path}")
 
-    # EM chart
-    em_row = profile_rows[profile_rows["type"] == "EM"]
-    if not em_row.empty:
-        data_path = em_row.iloc[0]["data_path"]
-        if data_path:
-            st.markdown("#### EM conductivity (HL / VL)")
-            show_em_chart(data_path, profile_name)
 
 
 
@@ -270,23 +236,13 @@ def render_sidebar(zones: list[str]) -> tuple[str, set[str], str]:
         format_func=lambda z: ZONE_LABELS.get(z, z),
     )
 
-    st.sidebar.markdown("#### Show on map")
-    show_ert = st.sidebar.checkbox("ERT", value=True)
-    show_em  = st.sidebar.checkbox("EM",  value=True)
-
-    visible: set[str] = set()
-    if show_ert: visible.add("ERT")
-    if show_em:  visible.add("EM")
-
     st.sidebar.divider()
     basemap = st.sidebar.selectbox("Basemap", list(BASEMAPS.keys()))
 
+    visible: set[str] = {"ERT"}
+
     st.sidebar.divider()
-    st.sidebar.markdown(
-        "**Legend**\n"
-        "🔵 ERT  \n"
-        "🟢 EM"
-    )
+    st.sidebar.markdown("**Legend**\n🔵 ERT")
     return zone, visible, basemap
 
 

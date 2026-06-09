@@ -1,5 +1,5 @@
 name,type,zone,lat,lon,start_lat,start_lon,end_lat,end_lon,image_path,data_path,description
-Profile 1,ERT,Kleinsee,51.943643,14.50455,51.943909,14.503594,51.943377,14.505506,data/Kleinsee/ERT values/Profile 1.jpg,,ERT profile 142m
-Profile 2,ERT,Kleinsee,51.943739,14.504825,51.944018,14.503899,51.943459,14.505752,data/Kleinsee/ERT values/Profile 2.bmp,,ERT profile 142m
-Profile 3,ERT,Kleinsee,51.943918,14.504714,51.944224,14.503736,51.943612,14.505692,data/Kleinsee/ERT values/Profile 3.jpg,,ERT profile 150m
-Profile 4,ERT,Kleinsee,51.944059,14.505033,51.944334,14.504128,51.943784,14.505938,data/Kleinsee/ERT values/Profile 4.jpg,,ERT profile 146m
+Profile 1,ERT,Kleinsee,51.943643,14.50455,51.943909,14.503594,51.943377,14.505506,data/Kleinsee/ERT values/profile_01.tif,,ERT profile 142m
+Profile 2,ERT,Kleinsee,51.943739,14.504825,51.944018,14.503899,51.943459,14.505752,data/Kleinsee/ERT values/profile_02.tif,,ERT profile 142m
+Profile 3,ERT,Kleinsee,51.943918,14.504714,51.944224,14.503736,51.943612,14.505692,data/Kleinsee/ERT values/profile_03.tif,,ERT profile 150m
+Profile 4,ERT,Kleinsee,51.944059,14.505033,51.944334,14.504128,51.943784,14.505938,data/Kleinsee/ERT values/profile_04.tif,,ERT profile 146m

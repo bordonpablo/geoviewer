@@ -1,10 +1,10 @@
 # GeoViewer
 
-A Python tool to visualize geophysical survey data from two field sites in the Cottbus–Brandenburg region of Germany: **Weißes Lauch** and **Kleinsee**. Both sites have ERT inversion profiles; Weißes Lauch also has DUALEM electromagnetic data.
+A Python tool to visualize ERT inversion results from two field sites in the Cottbus–Brandenburg region of Germany: **Weißes Lauch** (profiles 1–12) and **Kleinsee** (profiles 1–4).
 
 There are two ways to explore the data:
 
-- **Map viewer** — a Streamlit web app where you click profile lines on a map to see inversion images and EM charts
+- **Map viewer** — a Streamlit web app where you click profile lines on a map to see ERT inversion images
 - **3D viewer** — a standalone PyVista window that stacks all ERT profiles into an interpolated 3D resistivity block
 
 ---
@@ -33,7 +33,7 @@ This opens `http://localhost:8501`. To open directly in Chrome:
 .\launch.ps1
 ```
 
-Pick a zone from the sidebar, then click any profile line on the map. ERT inversion images open full-screen; EM profiles show HL/VL conductivity charts. Basemap can be switched between OpenStreetMap, Google Satellite, and Google Hybrid.
+Pick a zone from the sidebar, then click any profile line on the map to see the ERT inversion image. Images can be opened full-screen. Basemap can be switched between OpenStreetMap, Google Satellite, and Google Hybrid.
 
 ---
 
@@ -70,12 +70,11 @@ The colormap matches the Surfer output used in the field reports (log scale, 15�
 | Column | Description |
 |---|---|
 | `name` | Profile name |
-| `type` | `ERT` or `EM` |
+| `type` | `ERT` |
 | `zone` | Zone name |
 | `lat`, `lon` | WGS84 center point |
 | `start_lat/lon`, `end_lat/lon` | Line endpoints |
-| `image_path` | Path to inversion image |
-| `data_path` | Path to EM CSV (`x`, `HL`, `VL` columns) |
+| `image_path` | Path to inversion image (PNG/JPG/BMP/TIF) |
 | `description` | Any notes |
 
 The zone appears automatically in the app on next restart.

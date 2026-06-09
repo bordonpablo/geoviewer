@@ -1,25 +1,13 @@
 name,type,zone,lat,lon,start_lat,start_lon,end_lat,end_lon,image_path,data_path,description
-Profile 1,ERT,Weißes Lauch,51.939715,14.488992,51.940323,14.489305,51.939107,14.488678,data/Weißes Lauch/ERT images/Profile 1.jpg,,Perfil ERT 150m
-Profile 1,EM,Weißes Lauch,51.939715,14.488992,51.940323,14.489305,51.939107,14.488678,,data/Weißes Lauch/em_values/Profile_1.csv,DUALEM HL/VL 150m
-Profile 2,ERT,Weißes Lauch,51.939637,14.488651,51.940231,14.488913,51.939042,14.488388,data/Weißes Lauch/ERT images/Profile 2.jpg,,Perfil ERT 150m
-Profile 2,EM,Weißes Lauch,51.939637,14.488651,51.940231,14.488913,51.939042,14.488388,,data/Weißes Lauch/em_values/Profile_2.csv,DUALEM HL/VL 150m
-Profile 3,ERT,Weißes Lauch,51.939715,14.488992,51.940323,14.489305,51.939107,14.488678,data/Weißes Lauch/ERT images/Profile 3.jpg,,Perfil ERT 154m
-Profile 3,EM,Weißes Lauch,51.939715,14.488992,51.940323,14.489305,51.939107,14.488678,,data/Weißes Lauch/em_values/Profile_3.csv,DUALEM HL/VL 154m
-Profile 4,ERT,Weißes Lauch,51.939515,14.488434,51.94033,14.488752,51.9387,14.488116,data/Weißes Lauch/ERT images/Profile 4.jpg,,Perfil ERT 202m
-Profile 4,EM,Weißes Lauch,51.939515,14.488434,51.94033,14.488752,51.9387,14.488116,,data/Weißes Lauch/em_values/Profile_4.csv,DUALEM HL/VL 202m
-Profile 5,ERT,Weißes Lauch,51.939553,14.488004,51.940444,14.48811,51.938681,14.487883,data/Weißes Lauch/ERT images/Profile 5.jpg,,Perfil ERT 204m
-Profile 5,EM,Weißes Lauch,51.939553,14.488004,51.940444,14.48811,51.938681,14.487883,,data/Weißes Lauch/em_values/Profile_5.csv,DUALEM HL/VL 204m
-Profile 6,ERT,Weißes Lauch,51.939432,14.487681,51.940451,14.487718,51.938671,14.487665,data/Weißes Lauch/ERT images/Profile 6.jpg,,Perfil ERT 230m
-Profile 6,EM,Weißes Lauch,51.939432,14.487681,51.940451,14.487718,51.938671,14.487665,,data/Weißes Lauch/em_values/Profile_6.csv,DUALEM HL/VL 230m
-Profile 7,ERT,Weißes Lauch,51.939609,14.487349,51.940423,14.487456,51.938795,14.487242,data/Weißes Lauch/ERT images/Profile 7.jpg,,Perfil ERT 232m
-Profile 7,EM,Weißes Lauch,51.939609,14.487349,51.940423,14.487456,51.938795,14.487242,,data/Weißes Lauch/em_values/Profile_7.csv,DUALEM HL/VL 232m
-Profile 8,ERT,Weißes Lauch,51.939368,14.486828,51.940259,14.48692,51.938478,14.486736,data/Weißes Lauch/ERT images/Profile 8.jpg,,Perfil ERT 222m
-Profile 8,EM,Weißes Lauch,51.939368,14.486828,51.940259,14.48692,51.938478,14.486736,,data/Weißes Lauch/em_values/Profile_8.csv,DUALEM HL/VL 222m
-Profile 9,ERT,Weißes Lauch,51.939264,14.486546,51.940167,14.486572,51.93836,14.486519,data/Weißes Lauch/ERT images/Profile 9.jpg,,Perfil ERT 210m
-Profile 9,EM,Weißes Lauch,51.939264,14.486546,51.940167,14.486572,51.93836,14.486519,,data/Weißes Lauch/em_values/Profile_9.csv,DUALEM HL/VL 210m
-Profile 10,ERT,Weißes Lauch,51.939343,14.486188,51.940049,14.486195,51.938637,14.486182,data/Weißes Lauch/ERT images/Profile 10.bmp,,Perfil ERT 175m
-Profile 10,EM,Weißes Lauch,51.939343,14.486188,51.940049,14.486195,51.938637,14.486182,,data/Weißes Lauch/em_values/Profile_10.csv,DUALEM HL/VL 175m
-Profile 11,ERT,Weißes Lauch,51.939225,14.485906,51.939841,14.48595,51.938609,14.485862,data/Weißes Lauch/ERT images/Profile 11.bmp,,Perfil ERT 145m
-Profile 11,EM,Weißes Lauch,51.939225,14.485906,51.939841,14.48595,51.938609,14.485862,,data/Weißes Lauch/em_values/Profile_11.csv,DUALEM HL/VL 145m
-Profile 12,ERT,Weißes Lauch,51.939016,14.485537,51.939714,14.485617,51.938319,14.485458,data/Weißes Lauch/ERT images/Profile 12.bmp,,Perfil ERT 175m
-Profile 12,EM,Weißes Lauch,51.939016,14.485537,51.939714,14.485617,51.938319,14.485458,,data/Weißes Lauch/em_values/Profile_12.csv,DUALEM HL/VL 175m
+Profile 1,ERT,Weißes Lauch,51.939715,14.488992,51.940323,14.489305,51.939107,14.488678,data/Weisses Lauch/ERT images/Profile 1.jpg,,ERT profile 150m
+Profile 2,ERT,Weißes Lauch,51.939637,14.488651,51.940231,14.488913,51.939042,14.488388,data/Weisses Lauch/ERT images/Profile 2.jpg,,ERT profile 150m
+Profile 3,ERT,Weißes Lauch,51.939715,14.488992,51.940323,14.489305,51.939107,14.488678,data/Weisses Lauch/ERT images/Profile 3.jpg,,ERT profile 154m
+Profile 4,ERT,Weißes Lauch,51.939515,14.488434,51.94033,14.488752,51.9387,14.488116,data/Weisses Lauch/ERT images/Profile 4.jpg,,ERT profile 202m
+Profile 5,ERT,Weißes Lauch,51.939553,14.488004,51.940444,14.48811,51.938681,14.487883,data/Weisses Lauch/ERT images/Profile 5.jpg,,ERT profile 204m
+Profile 6,ERT,Weißes Lauch,51.939432,14.487681,51.940451,14.487718,51.938671,14.487665,data/Weisses Lauch/ERT images/Profile 6.jpg,,ERT profile 230m
+Profile 7,ERT,Weißes Lauch,51.939609,14.487349,51.940423,14.487456,51.938795,14.487242,data/Weisses Lauch/ERT images/Profile 7.jpg,,ERT profile 232m
+Profile 8,ERT,Weißes Lauch,51.939368,14.486828,51.940259,14.48692,51.938478,14.486736,data/Weisses Lauch/ERT images/Profile 8.jpg,,ERT profile 222m
+Profile 9,ERT,Weißes Lauch,51.939264,14.486546,51.940167,14.486572,51.93836,14.486519,data/Weisses Lauch/ERT images/Profile 9.jpg,,ERT profile 210m
+Profile 10,ERT,Weißes Lauch,51.939343,14.486188,51.940049,14.486195,51.938637,14.486182,data/Weisses Lauch/ERT images/Profile 10.bmp,,ERT profile 175m
+Profile 11,ERT,Weißes Lauch,51.939225,14.485906,51.939841,14.48595,51.938609,14.485862,data/Weisses Lauch/ERT images/Profile 11.bmp,,ERT profile 145m
+Profile 12,ERT,Weißes Lauch,51.939016,14.485537,51.939714,14.485617,51.938319,14.485458,data/Weisses Lauch/ERT images/Profile 12.bmp,,ERT profile 175m
